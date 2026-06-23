@@ -1,133 +1,166 @@
-# OpenAI API Setup Guide 🔑
+# NVIDIA NIM API Setup Guide 🔑
 
-This guide walks you through obtaining an OpenAI API key and configuring it for SmartDocs AI.
-
----
-
-## Step 1: Create an OpenAI Account
-
-1. Go to [https://platform.openai.com](https://platform.openai.com)
-2. Click **Sign Up** (or **Log In** if you already have an account)
-3. Complete the registration process (email verification required)
+This guide walks you through obtaining NVIDIA NIM API keys and configuring
+them for SmartDocs AI. NVIDIA NIM is **completely free** — no credit card required.
 
 ---
 
-## Step 2: Add a Payment Method (Required for API Access)
+## Why NVIDIA NIM?
 
-1. Once logged in, navigate to **Settings → Billing**
-2. Click **Add payment method**
-3. Enter your credit/debit card details
-4. Set a **usage limit** (recommended: $5–$10 for development)
+SmartDocs AI uses two separate NVIDIA NIM API keys:
 
-> **Note:** OpenAI requires a payment method even when using free credits.
-> New accounts may receive free trial credits ($5 USD as of 2024).
+| Key | Used By | Purpose |
+|---|---|---|
+| `NVIDIA_CHAT_API_KEY` | `qa_engine.py` | LLM chat completions (Llama 3.3 70B + Nemotron 70B) |
+| `NVIDIA_EMBEDDING_API_KEY` | `embeddings.py` | Document + query embeddings (nv-embedqa-e5-v5) |
+
+Both keys are free with a NVIDIA developer account.
 
 ---
 
-## Step 3: Generate an API Key
+## Step 1: Create a NVIDIA Developer Account
 
-1. Navigate to [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Click **+ Create new secret key**
-3. Give it a name, e.g. `SmartDocs-AI-Dev`
-4. Click **Create secret key**
-5. **Copy the key immediately** — it will NOT be shown again!
+1. Go to [https://build.nvidia.com](https://build.nvidia.com)
+2. Click **Sign In** (top right)
+3. Click **Create Account** if you don't have one
+4. Register with your email — no credit card required
 
-Your key will look like:
+---
+
+## Step 2: Get Your Chat API Key (for LLM calls)
+
+1. Once logged in, go to [https://build.nvidia.com](https://build.nvidia.com)
+2. Search for **"llama-3.3-70b-instruct"** or browse **NIM Catalog**
+3. Click on the model → click **Get API Key**
+4. Click **Generate Key**
+5. **Copy the key immediately** — it starts with `nvapi-`
 
 ```
-sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+nvapi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+> This key is used for all LLM chat completions in `qa_engine.py`.
 
 ---
 
-## Step 4: Configure the Key in Your Project
+## Step 3: Get Your Embedding API Key (for embeddings)
+
+You can use the **same key** for both, or generate a separate one:
+
+1. Go to [https://build.nvidia.com](https://build.nvidia.com)
+2. Search for **"nv-embedqa-e5-v5"**
+3. Click on the model → click **Get API Key**
+4. Click **Generate Key** and copy
+
+> **Tip:** Using separate keys lets you track usage independently
+> and avoids hitting rate limits on one key for both tasks.
+
+---
+
+## Step 4: Configure Keys in Your Project
 
 ### Option A: Using the `.env` file (Recommended)
 
-1. In the project root directory, copy the template:
+1. Copy the template from project root:
 
-   ```bash
-   cp .env.template .env
-   ```
+```bash
+cp .env.template .env
+```
 
-2. Open `.env` in a text editor and replace the placeholder:
+2. Open `.env` and fill in both keys:
 
-   ```env
-   OPENAI_API_KEY=sk-proj-your-actual-key-here
-   ```
+```env
+NVIDIA_CHAT_API_KEY=nvapi-your-chat-key-here
+NVIDIA_EMBEDDING_API_KEY=nvapi-your-embedding-key-here
+```
 
-3. Save the file. **Do not commit this file to Git.**
+3. Save the file. **Never commit `.env` to Git** — it is already in `.gitignore`.
 
-### Option B: Set as a System Environment Variable (Alternative)
+### Option B: System Environment Variable
 
 **Windows (PowerShell):**
-
 ```powershell
-$env:OPENAI_API_KEY = "sk-proj-your-actual-key-here"
+$env:NVIDIA_CHAT_API_KEY = "nvapi-your-chat-key-here"
+$env:NVIDIA_EMBEDDING_API_KEY = "nvapi-your-embedding-key-here"
 ```
 
 **macOS / Linux:**
-
 ```bash
-export OPENAI_API_KEY="sk-proj-your-actual-key-here"
+export NVIDIA_CHAT_API_KEY="nvapi-your-chat-key-here"
+export NVIDIA_EMBEDDING_API_KEY="nvapi-your-embedding-key-here"
 ```
 
 ---
 
 ## Step 5: Verify the Connection
 
-Run the test script from the project root (with venv active):
+Run the NVIDIA smoke test from the project root (with venv active):
 
 ```bash
-python test_openai.py
+python tests/test_nvidia.py
 ```
 
 Expected output:
 
 ```
-🔑 API Key loaded successfully
-✅ OpenAI API connection successful!
+Testing chat model (meta/llama-3.3-70b-instruct)...
+  OK  Chat model working: OK
 
-🤖 OpenAI Response:
-Yes, I'm working! How can I assist you today?
+Testing embedding model (nvidia/nv-embedqa-e5-v5)...
+  OK  Embedding model working: dimension = 1024
+
+Done.
 ```
+
+If both lines show `OK` — you are fully configured.
 
 ---
 
 ## 🚨 Common Errors & Solutions
 
-| Error                       | Cause                              | Solution                                    |
-| --------------------------- | ---------------------------------- | ------------------------------------------- |
-| `OPENAI_API_KEY not found`  | `.env` file missing or key not set | Create `.env` from `.env.template`          |
-| `❌ Invalid OpenAI API key` | Wrong or expired key               | Regenerate a new key at platform.openai.com |
-| `⚠️ Rate limit exceeded`    | Too many requests                  | Wait 60 seconds and retry                   |
-| `💳 Insufficient credits`   | No balance on account              | Add payment method / purchase credits       |
-| `🌐 Network error`          | No internet connection             | Check your internet connection              |
+| Error | Cause | Solution |
+|---|---|---|
+| `NVIDIA_CHAT_API_KEY not found` | `.env` file missing or key not set | Copy `.env.template` → `.env` and fill in keys |
+| `NVIDIA_EMBEDDING_API_KEY not found` | Embedding key missing | Add `NVIDIA_EMBEDDING_API_KEY` to `.env` |
+| `❌ Invalid NVIDIA API key` | Wrong or expired key | Regenerate at build.nvidia.com |
+| `⚠️ Rate limit exceeded` | Too many requests | Wait 60 seconds and retry |
+| `🌐 Network error` | No internet connection | Check your internet connection |
+| `dimension = 768` (wrong) | Wrong embedding model | Ensure model is `nvidia/nv-embedqa-e5-v5` in `config.py` |
+
+---
+
+## 💰 Pricing
+
+NVIDIA NIM is **free for developers** on the hosted API tier.
+
+| Model | Cost |
+|---|---|
+| `meta/llama-3.3-70b-instruct` | Free (rate-limited) |
+| `nvidia/llama-3.1-nemotron-70b-instruct` | Free (rate-limited) |
+| `nvidia/nv-embedqa-e5-v5` | Free (rate-limited) |
+
+> Check [https://build.nvidia.com](https://build.nvidia.com) for current
+> rate limits and any updates to the free tier.
 
 ---
 
 ## 🔒 Security Best Practices
 
-- **Never share your API key** publicly, in code, or in screenshots
-- **Never commit `.env`** to version control (it is already in `.gitignore`)
-- **Set usage limits** in the OpenAI dashboard to avoid unexpected charges
+- **Never share your API keys** publicly, in code, or in screenshots
+- **Never commit `.env`** to version control (already in `.gitignore`)
+- **Use separate keys** for chat and embeddings to isolate rate limits
 - **Rotate your key** immediately if you suspect it has been compromised
+- Run `git status` before every push and confirm `.env` is NOT listed
 
 ---
 
-## 💰 Pricing Reference (as of 2024)
+## 📌 Models Used in This Project
 
-| Model                    | Input                | Output              |
-| ------------------------ | -------------------- | ------------------- |
-| `gpt-3.5-turbo`          | $0.0015 / 1K tokens  | $0.002 / 1K tokens  |
-| `gpt-4o-mini`            | $0.00015 / 1K tokens | $0.0006 / 1K tokens |
-| `text-embedding-3-small` | $0.00002 / 1K tokens | —                   |
+| Purpose | Model | Key Used |
+|---|---|---|
+| Primary LLM | `meta/llama-3.3-70b-instruct` | `NVIDIA_CHAT_API_KEY` |
+| Secondary LLM (fallback) | `nvidia/llama-3.1-nemotron-70b-instruct` | `NVIDIA_CHAT_API_KEY` |
+| Embeddings | `nvidia/nv-embedqa-e5-v5` (1024-dim) | `NVIDIA_EMBEDDING_API_KEY` |
 
-> Check [https://openai.com/pricing](https://openai.com/pricing) for the latest pricing.
-
----
-
-## 📌 Model Used in This Project
-
-This project defaults to **`gpt-3.5-turbo`** for Q&A responses.
-You can change the model in `backend/openai_helper.py`.
+All models are configured in `config.py`. To change a model, update the
+`PRIMARY_MODEL`, `SECONDARY_MODEL`, or `EMBEDDING_MODEL` constants there.
